@@ -1,69 +1,61 @@
 local player = game.Players.LocalPlayer
-local tweenService = game:GetService("TweenService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
 local workspace = game:GetService("Workspace")
+local tweenService = game:GetService("TweenService")
+local virtualUser = game:GetService("VirtualUser")
 
--- Função para criar movimento suave com TweenService
-local function teleportSmooth(targetPosition)
+-- Evita que o jogador seja kickado por inatividade
+player.Idled:Connect(function()
+    virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    wait(1)
+    virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+-- Função para teleporte seguro
+local function teleport(target)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         local humanoidRootPart = player.Character.HumanoidRootPart
-        local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear)
-        local tween = tweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetPosition})
-        
-        tween:Play()
-        tween.Completed:Wait()
+        humanoidRootPart.CFrame = target
+        wait(1.5) -- Pequeno delay para evitar detecção
     end
 end
 
--- AUTO COLLECT CHESTS (BAÚS)
+-- Auto Collect Chests (Baús)
 local function collectChests()
-    for _, chest in pairs(workspace:GetChildren()) do
-        if chest:IsA("Model") and chest:FindFirstChild("HumanoidRootPart") and string.find(chest.Name, "Chest") then
-            teleportSmooth(chest.HumanoidRootPart.CFrame)
-            wait(1.5)
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj.Name:find("Chest") then
+            teleport(obj.HumanoidRootPart.CFrame)
         end
     end
 end
 
--- AUTO COLLECT FRUITS (FRUTAS)
+-- Auto Collect Fruits (Frutas)
 local function collectFruits()
     for _, fruit in pairs(workspace:GetChildren()) do
-        if fruit:IsA("Tool") and string.find(fruit.Name, "Fruit") then
-            teleportSmooth(fruit.Handle.CFrame)
-            wait(1)
+        if fruit:IsA("Tool") and fruit.Name:find("Fruit") then
+            teleport(fruit.Handle.CFrame)
         end
     end
 end
 
--- AUTO FARM NPCs
+-- Auto Farm NPCs
 local function autoFarmNPCs()
-    local enemies = {}
-
-    -- Encontrar NPCs inimigos
-    for _, npc in pairs(workspace:GetChildren()) do
+    for _, npc in pairs(workspace.Enemies:GetChildren()) do
         if npc:IsA("Model") and npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
-            table.insert(enemies, npc)
-        end
-    end
-
-    -- Atacar cada inimigo encontrado
-    for _, enemy in pairs(enemies) do
-        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            teleportSmooth(enemy.HumanoidRootPart.CFrame)
+            teleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)) -- Fica perto do NPC
             wait(0.5)
-            
-            -- Simular ataque (Requer arma equipada)
+
+            -- Simula ataques (pressionando a tecla virtual)
             for i = 1, 5 do
-                replicatedStorage.Remotes.CommF_:InvokeServer("DamageNPC", enemy, 10, "Melee")
-                wait(0.2)
+                virtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                wait(0.3)
             end
         end
     end
 end
 
--- Loop principal
+-- Loop Principal
 while wait(5) do
-    collectChests()  -- Coleta baús
-    collectFruits()  -- Coleta frutas
-    autoFarmNPCs()   -- Auto farm de NPCs
+    collectChests()  -- Coletar baús
+    collectFruits()  -- Coletar frutas
+    autoFarmNPCs()   -- Farm de NPCs
 end
