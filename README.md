@@ -10,12 +10,23 @@ local function findChests()
     end
 end
 
--- Função para teleportar até os baús e coletá-los
+-- Função para teleportar suavemente até os baús
+local function teleportSmooth(target)
+    if target and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = player.Character.HumanoidRootPart
+        for i = 1, 10 do -- Teleporte em 10 pequenos passos
+            humanoidRootPart.CFrame = humanoidRootPart.CFrame:Lerp(target.CFrame, 0.2)
+            wait(0.1) -- Pequeno delay para evitar kick
+        end
+    end
+end
+
+-- Função para coletar baús de forma segura
 local function collectChests()
     for _, chest in pairs(chests) do
         if chest and chest:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = chest.HumanoidRootPart.CFrame
-            wait(0.5) -- Pequeno delay para evitar bugs
+            teleportSmooth(chest.HumanoidRootPart.CFrame)
+            wait(1) -- Aguardar um pouco antes do próximo teleporte
         end
     end
 end
